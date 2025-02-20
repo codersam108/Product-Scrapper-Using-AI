@@ -1,10 +1,12 @@
 import json
 import openai
 from dotenv import load_dotenv
-load_dotenv()  # This loads the variables from your .env file
 import os
 
+# Load environment variables from .env file
+load_dotenv()
 
+# Set OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def fetch_product_details(product_name):
@@ -41,18 +43,17 @@ Example:
   "short_description": "<div>... concise HTML ...</div>"
 }}
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # Change to gpt-4 if you have access
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=1200
-    )
-    result_text = response.choices[0].message.content.strip()
     try:
-        return json.loads(result_text)
-    except json.JSONDecodeError:
-        print("Error: The API response is not valid JSON. Raw response:")
-        print(result_text)
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=1200
+        )
+        result_text = response["choices"][0]["message"]["content"].strip()
+        return json.loads(result_text)  # Ensure JSON output
+    except (json.JSONDecodeError, KeyError, openai.error.OpenAIError) as e:
+        print("Error: Failed to fetch product details.", e)
         return None
 
 def fetch_weight_dimensions_via_api(product_name):
@@ -66,17 +67,17 @@ If exact values are not available, return "Not Found" for those keys.
 Return only a valid JSON object in the format:
 {{"weight": "<value>", "dimensions": "<value>"}}
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=150
-    )
-    result_text = response.choices[0].message.content.strip()
     try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=150
+        )
+        result_text = response["choices"][0]["message"]["content"].strip()
         specs = json.loads(result_text)
         return specs.get("weight", "Not Found"), specs.get("dimensions", "Not Found")
-    except Exception as e:
+    except (json.JSONDecodeError, KeyError, openai.error.OpenAIError) as e:
         print("Error fetching weight/dimensions from API:", e)
         return "Not Found", "Not Found"
 
@@ -89,19 +90,25 @@ def fetch_additional_specs_via_api(product_name):
 Provide the following product specifications for "{product_name}":
 Cooling Capacity, Key Component, Refrigerant, Compressor Type, Energy Efficiency.
 Return only a valid JSON object in the following format:
-{{"Cooling Capacity": "<value>", "Key Component": "<value>", "Refrigerant": "<value>", "Compressor Type": "<value>", "Energy Efficiency": "<value>"}}
+{{
+  "Cooling Capacity": "<value>",
+  "Key Component": "<value>",
+  "Refrigerant": "<value>",
+  "Compressor Type": "<value>",
+  "Energy Efficiency": "<value>"
+}}
 If any information is not available, return "Not Found" for that key.
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=150
-    )
-    result_text = response.choices[0].message.content.strip()
     try:
-        return json.loads(result_text)
-    except Exception as e:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=150
+        )
+        result_text = response["choices"][0]["message"]["content"].strip()
+        return json.loads(result_text)  # Ensure JSON output
+    except (json.JSONDecodeError, KeyError, openai.error.OpenAIError) as e:
         print("Error fetching additional specs from API:", e)
         return {
             "Cooling Capacity": "Not Found",
