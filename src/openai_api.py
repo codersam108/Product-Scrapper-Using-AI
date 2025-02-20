@@ -42,7 +42,7 @@ Example:
 }}
     """
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # Change to gpt-4 if you have access
+        model="gpt-4",  # Change to gpt-4 if you have access
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=1200
