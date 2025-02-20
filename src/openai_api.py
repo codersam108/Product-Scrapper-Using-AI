@@ -1,5 +1,7 @@
 import json
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY"))
 import streamlit as st
 from dotenv import load_dotenv
 import os
@@ -7,7 +9,6 @@ import os
 # Load environment variables from .env or Streamlit secrets
 load_dotenv()
 # For Streamlit Cloud, use st.secrets; for local, ensure .env is in the same folder
-openai.api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
     st.error("OPENAI_API_KEY not set in environment or secrets!")
     st.stop()
@@ -49,13 +50,11 @@ Example:
 }}
     """
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=1200
-        )
-        result_text = response["choices"][0]["message"]["content"].strip()
+        response = client.chat.completions.create(model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=1200)
+        result_text = response.choices[0].message.content.strip()
         return json.loads(result_text)
     except Exception as e:
         st.error(f"Error fetching product details: {e}")
@@ -73,13 +72,11 @@ Return only a valid JSON object in the format:
 {{"weight": "<value>", "dimensions": "<value>"}}
     """
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=150
-        )
-        result_text = response["choices"][0]["message"]["content"].strip()
+        response = client.chat.completions.create(model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+        max_tokens=150)
+        result_text = response.choices[0].message.content.strip()
         specs = json.loads(result_text)
         return specs.get("weight", "Not Found"), specs.get("dimensions", "Not Found")
     except Exception as e:
@@ -99,13 +96,11 @@ Return only a valid JSON object in the following format:
 If any information is not available, return "Not Found" for that key.
     """
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=150
-        )
-        result_text = response["choices"][0]["message"]["content"].strip()
+        response = client.chat.completions.create(model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+        max_tokens=150)
+        result_text = response.choices[0].message.content.strip()
         return json.loads(result_text)
     except Exception as e:
         st.error(f"Error fetching additional specs: {e}")
