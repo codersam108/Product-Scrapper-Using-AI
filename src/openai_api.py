@@ -1,5 +1,11 @@
 import json
 import openai
+from dotenv import load_dotenv
+load_dotenv()  # This loads environment variables from your .env file
+import os
+
+# Set the API key from the environment variable
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def fetch_product_details(product_name):
     """
@@ -56,7 +62,7 @@ def fetch_weight_dimensions_via_api(product_name):
     prompt = f"""
 Provide the product weight and dimensions for "{product_name}".
 If exact values are not available, return "Not Found" for those keys.
-Return only a valid JSON object in the following format:
+Return only a valid JSON object in the format:
 {{"weight": "<value>", "dimensions": "<value>"}}
     """
     try:
