@@ -1,13 +1,5 @@
 import json
 import openai
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def fetch_product_details(product_name):
     """
@@ -45,14 +37,14 @@ Example:
     """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4",  # or "gpt-3.5-turbo" if you prefer
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=1200
         )
         result_text = response["choices"][0]["message"]["content"].strip()
-        return json.loads(result_text)  # Ensure JSON output
-    except (json.JSONDecodeError, KeyError, openai.error.OpenAIError) as e:
+        return json.loads(result_text)
+    except Exception as e:
         print("Error: Failed to fetch product details.", e)
         return None
 
@@ -64,7 +56,7 @@ def fetch_weight_dimensions_via_api(product_name):
     prompt = f"""
 Provide the product weight and dimensions for "{product_name}".
 If exact values are not available, return "Not Found" for those keys.
-Return only a valid JSON object in the format:
+Return only a valid JSON object in the following format:
 {{"weight": "<value>", "dimensions": "<value>"}}
     """
     try:
@@ -77,7 +69,7 @@ Return only a valid JSON object in the format:
         result_text = response["choices"][0]["message"]["content"].strip()
         specs = json.loads(result_text)
         return specs.get("weight", "Not Found"), specs.get("dimensions", "Not Found")
-    except (json.JSONDecodeError, KeyError, openai.error.OpenAIError) as e:
+    except Exception as e:
         print("Error fetching weight/dimensions from API:", e)
         return "Not Found", "Not Found"
 
@@ -90,13 +82,7 @@ def fetch_additional_specs_via_api(product_name):
 Provide the following product specifications for "{product_name}":
 Cooling Capacity, Key Component, Refrigerant, Compressor Type, Energy Efficiency.
 Return only a valid JSON object in the following format:
-{{
-  "Cooling Capacity": "<value>",
-  "Key Component": "<value>",
-  "Refrigerant": "<value>",
-  "Compressor Type": "<value>",
-  "Energy Efficiency": "<value>"
-}}
+{{"Cooling Capacity": "<value>", "Key Component": "<value>", "Refrigerant": "<value>", "Compressor Type": "<value>", "Energy Efficiency": "<value>"}}
 If any information is not available, return "Not Found" for that key.
     """
     try:
@@ -107,8 +93,8 @@ If any information is not available, return "Not Found" for that key.
             max_tokens=150
         )
         result_text = response["choices"][0]["message"]["content"].strip()
-        return json.loads(result_text)  # Ensure JSON output
-    except (json.JSONDecodeError, KeyError, openai.error.OpenAIError) as e:
+        return json.loads(result_text)
+    except Exception as e:
         print("Error fetching additional specs from API:", e)
         return {
             "Cooling Capacity": "Not Found",
