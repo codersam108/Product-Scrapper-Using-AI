@@ -1,11 +1,15 @@
 import json
 import openai
 from dotenv import load_dotenv
-load_dotenv()  # This loads environment variables from your .env file
 import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Set the API key from the environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    raise ValueError("OPENAI_API_KEY not set in environment.")
 
 def fetch_product_details(product_name):
     """
@@ -43,12 +47,14 @@ Example:
     """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # or "gpt-3.5-turbo" if you prefer
+            model="gpt-4",  # Change to "gpt-3.5-turbo" if needed
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=1200
         )
         result_text = response["choices"][0]["message"]["content"].strip()
+        # Debug print (remove in production)
+        # print("Product Details API raw response:", result_text)
         return json.loads(result_text)
     except Exception as e:
         print("Error: Failed to fetch product details.", e)
@@ -67,12 +73,14 @@ Return only a valid JSON object in the format:
     """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=150
         )
         result_text = response["choices"][0]["message"]["content"].strip()
+        # Debug print (remove in production)
+        # print("Weight/Dimensions API raw response:", result_text)
         specs = json.loads(result_text)
         return specs.get("weight", "Not Found"), specs.get("dimensions", "Not Found")
     except Exception as e:
@@ -93,12 +101,14 @@ If any information is not available, return "Not Found" for that key.
     """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=150
         )
         result_text = response["choices"][0]["message"]["content"].strip()
+        # Debug print (remove in production)
+        # print("Additional Specs API raw response:", result_text)
         return json.loads(result_text)
     except Exception as e:
         print("Error fetching additional specs from API:", e)
