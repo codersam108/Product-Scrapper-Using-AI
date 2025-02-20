@@ -1,27 +1,25 @@
 import json
-from openai import OpenAI
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY"))
+import openai
 import streamlit as st
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env or Streamlit secrets
+# Load environment variables from .env file
 load_dotenv()
-# For Streamlit Cloud, use st.secrets; for local, ensure .env is in the same folder
-if not openai.api_key:
-    st.error("OPENAI_API_KEY not set in environment or secrets!")
-    st.stop()
 
-# --- OpenAI API Helper Functions ---
+# Set the API key from Streamlit secrets (or .env if not deployed on Streamlit Cloud)
+openai.api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    st.error("OPENAI_API_KEY is not set in environment or secrets!")
+    st.stop()
 
 def fetch_product_details(product_name):
     """
-    Uses the OpenAI API to generate a detailed product description in HTML.
-    Returns a JSON object with keys "description" and "short_description".
+    Uses the OpenAI API to generate a rich, customer-facing HTML product description.
+    Expects a JSON object with keys "description" and "short_description".
     """
     prompt = f"""
-You are to generate a detailed product description in HTML for the product '{product_name}'.
+You are to generate a detailed product description in HTML for the product "{product_name}".
 Your output must be a valid JSON object with two keys:
   "description" and "short_description".
 
@@ -50,11 +48,13 @@ Example:
 }}
     """
     try:
-        response = client.chat.completions.create(model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=1200)
-        result_text = response.choices[0].message.content.strip()
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # Change to "gpt-3.5-turbo" if needed
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=1200
+        )
+        result_text = response["choices"][0]["message"]["content"].strip()
         return json.loads(result_text)
     except Exception as e:
         st.error(f"Error fetching product details: {e}")
@@ -62,8 +62,8 @@ Example:
 
 def fetch_weight_dimensions_via_api(product_name):
     """
-    Uses the OpenAI API as a fallback to retrieve product weight and dimensions.
-    Expects a JSON object with keys "weight" and "dimensions".
+    Uses the OpenAI API as a fallback to retrieve the product's weight and dimensions.
+    Expects a JSON response with keys "weight" and "dimensions".
     """
     prompt = f"""
 Provide the product weight and dimensions for "{product_name}".
@@ -72,11 +72,13 @@ Return only a valid JSON object in the format:
 {{"weight": "<value>", "dimensions": "<value>"}}
     """
     try:
-        response = client.chat.completions.create(model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=150)
-        result_text = response.choices[0].message.content.strip()
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Change to "gpt-4" if needed
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=150
+        )
+        result_text = response["choices"][0]["message"]["content"].strip()
         specs = json.loads(result_text)
         return specs.get("weight", "Not Found"), specs.get("dimensions", "Not Found")
     except Exception as e:
@@ -86,7 +88,8 @@ Return only a valid JSON object in the format:
 def fetch_additional_specs_via_api(product_name):
     """
     Uses the OpenAI API as a fallback to retrieve additional product specifications.
-    Expects a JSON object with keys: Cooling Capacity, Key Component, Refrigerant, Compressor Type, Energy Efficiency.
+    Expects a JSON object with the following keys:
+      Cooling Capacity, Key Component, Refrigerant, Compressor Type, Energy Efficiency.
     """
     prompt = f"""
 Provide the following product specifications for "{product_name}":
@@ -96,11 +99,13 @@ Return only a valid JSON object in the following format:
 If any information is not available, return "Not Found" for that key.
     """
     try:
-        response = client.chat.completions.create(model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=150)
-        result_text = response.choices[0].message.content.strip()
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Change to "gpt-4" if needed
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=150
+        )
+        result_text = response["choices"][0]["message"]["content"].strip()
         return json.loads(result_text)
     except Exception as e:
         st.error(f"Error fetching additional specs: {e}")
@@ -111,38 +116,3 @@ If any information is not available, return "Not Found" for that key.
             "Compressor Type": "Not Found",
             "Energy Efficiency": "Not Found"
         }
-
-# --- Streamlit UI ---
-
-st.title("🔍 Product Scraper & AI Description Generator")
-
-# Use a unique key to avoid duplicate element IDs
-product_name = st.text_input("Enter Product Name:", key="product_name_input")
-
-if st.button("Generate Description", key="generate_desc_button"):
-    if not product_name.strip():
-        st.warning("Please enter a product name.")
-    else:
-        st.info("Fetching product details...")
-        details = fetch_product_details(product_name)
-
-        if details:
-            st.subheader("Short Description")
-            st.markdown(details["short_description"], unsafe_allow_html=True)
-            st.subheader("Detailed Description")
-            st.markdown(details["description"], unsafe_allow_html=True)
-        else:
-            st.error("Failed to retrieve product details from API.")
-
-        st.info("Fetching weight and dimensions (via API fallback)...")
-        weight, dimensions = fetch_weight_dimensions_via_api(product_name)
-        st.write(f"**Weight:** {weight}")
-        st.write(f"**Dimensions:** {dimensions}")
-
-        st.info("Fetching additional specifications (via API fallback)...")
-        specs = fetch_additional_specs_via_api(product_name)
-        st.write("**Cooling Capacity:**", specs.get("Cooling Capacity", "Not Found"))
-        st.write("**Key Component:**", specs.get("Key Component", "Not Found"))
-        st.write("**Refrigerant:**", specs.get("Refrigerant", "Not Found"))
-        st.write("**Compressor Type:**", specs.get("Compressor Type", "Not Found"))
-        st.write("**Energy Efficiency:**", specs.get("Energy Efficiency", "Not Found"))
