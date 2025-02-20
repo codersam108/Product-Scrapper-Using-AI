@@ -67,7 +67,7 @@ Return only a valid JSON object in the format:
     """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=150
@@ -93,7 +93,7 @@ If any information is not available, return "Not Found" for that key.
     """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=150
